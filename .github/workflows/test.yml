@@ -1,0 +1,43 @@
+name: Automated Tests
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        test-path: [RTP-base, RTP-opt]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          sudo pip install -r requirements.txt
+      
+      - name: Make test script executable
+        run: chmod +x ./test_scripts/test.sh ./test_scripts/compare.sh
+      
+      - name: Run tests for ${{ matrix.test-path }}
+        run: |
+          bash ./test_scripts/test.sh ${{ matrix.test-path }}
+        continue-on-error: false
+      
+      - name: Upload output files
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-output-${{ matrix.test-path }}
+          path: ${{ matrix.test-path }}/output.txt
